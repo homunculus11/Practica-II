@@ -1,0 +1,14 @@
+1. https://ceiti.md/elevi-actuali/
+Lista de nume reale de elevi, obținută din baza de date a instituției.
+
+2. https://localitati.casata.md/
+Referință pentru localități și raioane, utilizată pentru date geografice autentice.
+
+3. https://code.visualstudio.com/
+Editorul utilizat pentru configurarea mediului de dezvoltare și implementarea proiectului.
+
+4. https://openjfx.io/
+Documentația oficială OpenJFX, folosită pentru integrarea și configurarea JavaFX.
+
+5. https://docs.google.com/document/d/1mSMqvGZocmkXCK-k-sFZLVyjHrnEiV-B/edit?rtpof=true&sd=true
+Specificarea temei practice de instruire.

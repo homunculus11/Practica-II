@@ -1,0 +1,13 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "type": "java",
+      "name": "Debug Main",
+      "request": "launch",
+      "mainClass": "Main",
+      "vmArgs": "--module-path configurations/javafx-25-sdk/lib --add-modules javafx.controls",
+      "preLaunchTask": "Build Main"
+    }
+  ]
+}
