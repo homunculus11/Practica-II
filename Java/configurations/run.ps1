@@ -98,10 +98,21 @@ if (-not $javaHome -or -not (Test-Path "$javaHome\bin\java.exe") -or -not (Test-
 Write-Host "Using Java from: $javaHome" -ForegroundColor Green
 Write-Host ""
 Write-Host "Compiling Main.java..." -ForegroundColor Cyan
-& "$javaHome\bin\javac" --module-path configurations\javafx-25-sdk\lib --add-modules javafx.controls Main.java
+& "$javaHome\bin\javac" --module-path configurations\javafx-25-sdk\lib --add-modules javafx.controls --class-path "..\mssql-jdbc.jar" Main.java
 
 if ($LASTEXITCODE -ne 0) {
     Write-Host "[ERROR] Compilation failed!" -ForegroundColor Red
+    Write-Host "" -ForegroundColor Red
+    Write-Host "Possible issues:" -ForegroundColor Yellow
+    Write-Host "1. JavaFX SDK not found" -ForegroundColor Yellow
+    Write-Host "   - Download from: https://gluonhq.com/download/javafx-25/" -ForegroundColor Yellow
+    Write-Host "   - Extract to: configurations\javafx-25-sdk" -ForegroundColor Yellow
+    Write-Host "" -ForegroundColor Yellow
+    Write-Host "2. Missing lib folder" -ForegroundColor Yellow
+    Write-Host "   - Check: configurations\javafx-25-sdk\lib\ contains JAR files" -ForegroundColor Yellow
+    Write-Host "" -ForegroundColor Yellow
+    Write-Host "3. SQL Server JDBC driver not found" -ForegroundColor Yellow
+    Write-Host "   - Check: ..\mssql-jdbc.jar exists" -ForegroundColor Yellow
     exit 1
 }
 
@@ -109,4 +120,4 @@ Write-Host "[OK] Compilation successful!" -ForegroundColor Green
 Write-Host "Running Main..." -ForegroundColor Cyan
 Write-Host ""
 
-& "$javaHome\bin\java" --enable-native-access=javafx.graphics --module-path configurations\javafx-25-sdk\lib --add-modules javafx.controls Main
+& "$javaHome\bin\java" --module-path configurations\javafx-25-sdk\lib --add-modules javafx.controls --class-path "..\mssql-jdbc.jar;." Main

@@ -104,7 +104,7 @@ echo.
 echo Using JDK: %JDK_HOME%
 echo.
 echo Compiling Main.java...
-"%JAVAC_CMD%" --module-path configurations\javafx-25-sdk\lib --add-modules javafx.controls Main.java
+"%JAVAC_CMD%" --module-path configurations\javafx-25-sdk\lib --add-modules javafx.controls --class-path "..\mssql-jdbc.jar" Main.java
 
 if %ERRORLEVEL% neq 0 (
     echo.
@@ -118,6 +118,9 @@ if %ERRORLEVEL% neq 0 (
     echo 2. Missing lib folder
     echo    - Check: configurations\javafx-25-sdk\lib\ contains JAR files
     echo.
+    echo 3. SQL Server JDBC driver not found
+    echo    - Check: ..\mssql-jdbc.jar exists
+    echo.
     pause
     exit /b 1
 )
@@ -128,7 +131,7 @@ echo.
 echo Running Main...
 echo.
 
-"%JAVA_CMD%" --enable-native-access=javafx.graphics --module-path configurations\javafx-25-sdk\lib --add-modules javafx.controls Main
+"%JAVA_CMD%" --module-path configurations\javafx-25-sdk\lib --add-modules javafx.controls --class-path "..\mssql-jdbc.jar;." Main
 exit /b %ERRORLEVEL%
 
 :install_jdk

@@ -80,35 +80,104 @@ If you prefer to install JDK manually:
 
 ---
 
-### Step 3: Download JavaFX 25 SDK
+### Step 4: Download SQL Server JDBC Driver (IMPORTANT - Version Matters!)
 
-1. **Visit the official JavaFX website**:
-   - Open your web browser
-   - Go to: https://gluonhq.com/products/javafx/
+**Required for database connectivity**
 
-2. **Download JavaFX 25 SDK**:
-   - Scroll down to "Download JavaFX"
-   - Select **JavaFX Windows SDK** (zip file)
-   - Download the latest version (25.x.x)
+**⚠️ Important**: The JDBC driver version must be compatible with JDK 25. The older version (13.4.0) does NOT work with JDK 25.
 
-3. **Extract JavaFX SDK**:
-   - Locate the downloaded zip file
-   - Right-click and select "Extract All..."
-   - Extract to: `Practica-II\Java\configurations\javafx-25-sdk`
-   - The folder structure should look like:
-     ```
-     Practica-II/
-     └── Java/
-         └── configurations/
-             └── javafx-25-sdk/
-                 ├── lib/
-                 ├── src.zip
-                 └── ...
-     ```
+1. **Visit Microsoft JDBC download page**:
+   - Open browser: https://learn.microsoft.com/en-us/sql/connect/jdbc/download-microsoft-jdbc-driver-for-sql-server
+
+2. **Download the correct JDBC driver**:
+   - Look for "Microsoft JDBC Driver for SQL Server"
+   - **Download version 12.6.3 or newer** (must support JDK 17+)
+   - Download the ZIP file for **jre17** or **jre21** (NOT jre11)
+   - Extract the ZIP file
+
+3. **Place the JAR file**:
+   - Find the JAR file from the extracted ZIP (e.g., `mssql-jdbc-12.6.3.jre17.jar`)
+   - Copy it to: `Practica-II\Java\mssql-jdbc.jar`
+   - **IMPORTANT**: Rename it to exactly `mssql-jdbc.jar`
+
+4. **Remove the old incompatible driver**:
+   - Delete any old version like `mssql-jdbc-13.4.0.jre11.jar`
+   - Only keep the new version as `mssql-jdbc.jar`
+
+**Why this matters**:
+- JDK 25 is newer than JRE 11
+- JRE 11 drivers don't load the necessary modules for JDK 25
+- You need a driver compiled for JDK 17 or higher
 
 ---
 
-### Step 4: Run the Application
+### Step 6: Set Up SQL Server Database (REQUIRED)
+
+**⚠️ IMPORTANT**: The Java application **requires** a SQL Server database to function. You **must** complete this step before running the application.
+
+#### Database Connection Details:
+- **Server**: `Niku\SQLEXPRESS`
+- **Database**: `Cursuri_Online`
+- **Authentication**: Windows Authentication
+- **User**: `NIKU\Niku`
+
+#### Step 6.1: Verify SQL Server is Running
+
+1. **Check SQL Server service**:
+   - Press `Win + R`, type `services.msc`, press Enter
+   - Find "SQL Server (SQLEXPRESS)"
+   - Make sure Status is "Running"
+   - If not running, right-click → "Start"
+
+2. **Check SQL Server Configuration**:
+   - Open "SQL Server Configuration Manager"
+   - Go to "SQL Server Network Configuration" → "Protocols for SQLEXPRESS"
+   - Make sure "TCP/IP" is "Enabled"
+
+#### Step 6.2: Create the Database in SSMS
+
+1. **Open SQL Server Management Studio (SSMS)**
+
+2. **Connect to your SQL Server**:
+   - Server type: Database Engine
+   - Server name: `Niku\SQLEXPRESS`
+   - Authentication: Windows Authentication
+   - Click "Connect"
+
+3. **Create the database**:
+   - In Object Explorer (left panel), right-click "Databases"
+   - Select "New Database..."
+   - Database name: `Cursuri_Online`
+   - Click "OK"
+
+#### Step 6.3: Run the Database Schema Script
+
+1. **Open the SQL script**:
+   - In SSMS, click "File" → "Open" → "File..."
+   - Navigate to: `Practica-II\SQL\SQL Demo Files\All-in-One\structure-and-inserts-in-order.sql`
+   - Click "Open"
+
+2. **Execute the script**:
+   - Make sure "Cursuri_Online" is selected in the database dropdown (top of query window)
+   - Click the "Execute" button (or press F5)
+   - The script will create all tables and insert sample data
+
+3. **Verify the setup**:
+   - In Object Explorer, expand "Databases" → "Cursuri_Online" → "Tables"
+   - You should see tables like: Domenii, Raioane, Localitati, Institutii, Profesori, etc.
+
+#### Step 6.4: Test Database Connection (Optional)
+
+You can test the connection in SSMS:
+- Right-click the "Cursuri_Online" database
+- Select "New Query"
+- Type: `SELECT @@VERSION`
+- Press F5 to execute
+- You should see SQL Server version information
+
+---
+
+### Step 7: Test the Application
 
 #### Method 1: Using Batch File (Recommended)
 
@@ -166,7 +235,8 @@ A JavaFX window should open showing the course management application.
 ```
 Practica-II/
 ├── Java/                          # Main JavaFX Application
-│   ├── Main.java                 # Application entry point
+│   ├── Main.java                 # Application entry point (with SQL Server connection)
+│   ├── mssql-jdbc-13.4.0.jre11.jar  # SQL Server JDBC driver
 │   └── configurations/           # Build and runtime configuration
 │       ├── run.bat              # Windows batch runner (main script)
 │       ├── run.ps1              # PowerShell runner
@@ -217,13 +287,38 @@ Practica-II/
 3. Ensure JavaFX SDK is in the correct location
 4. Try running as administrator
 
-### Problem: "Application window doesn't open"
+### Problem: "Cannot open database 'Cursuri_Online'"
 
 **Solution**:
-1. Check if JavaFX runtime is available
-2. Ensure all required JAR files are present
-3. Try updating your graphics drivers
-4. Check Windows Firewall settings
+1. Open SQL Server Management Studio (SSMS)
+2. Connect to `Niku\SQLEXPRESS`
+3. Right-click "Databases" → "New Database..."
+4. Name it `Cursuri_Online`
+5. Run the SQL script from `SQL\SQL Demo Files\All-in-One\structure-and-inserts-in-order.sql`
+
+### Problem: "Login failed for user" or "Access denied"
+
+**Solution**:
+1. Ensure you're using Windows Authentication in SSMS
+2. Verify your Windows user account has access to SQL Server
+3. Check SQL Server security settings in SSMS
+
+### Problem: "SQL Server JDBC Driver not found"
+
+**Solution**:
+1. Verify the file exists: `Java\mssql-jdbc-13.4.0.jre11.jar`
+2. If missing, download from Microsoft:
+   - Go to: https://docs.microsoft.com/en-us/sql/connect/jdbc/download-microsoft-jdbc-driver-for-sql-server
+   - Download the JAR file for your JDK version
+   - Place it in the `Java\` folder
+
+### Problem: "TCP/IP connection failed" or network errors
+
+**Solution**:
+1. Open "SQL Server Configuration Manager"
+2. Go to "SQL Server Network Configuration" → "Protocols for SQLEXPRESS"
+3. Enable "TCP/IP" protocol
+4. Restart SQL Server service
 
 ### Problem: "Access denied" or "Permission denied"
 
