@@ -97,6 +97,3 @@ CREATE TABLE Participari_Cursuri(
 	GrupaID INT REFERENCES Grupe_Cursuri(GrupaID) NOT NULL,
 );
 
--- Ștergerea bazei de date în cazul în care este necesar
-USE master;
-DROP DATABASE Cursuri_Online;

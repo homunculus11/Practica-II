@@ -6,6 +6,22 @@
 
 A JavaFX GUI application for managing online courses with an associated SQL database schema. This guide provides complete step-by-step instructions for setting up the project on Windows 10.
 
+## Database connection
+
+The JavaFX app reads SQL Server settings from `JavaFX\db.properties`.
+
+Default configuration:
+
+```properties
+db.server=localhost\\SQLEXPRESS
+db.name=Cursuri_Online
+db.integratedSecurity=true
+db.user=
+db.password=
+```
+
+For SSMS Windows Authentication, change only `db.server` and `db.name` if your instance/database names are different. For SQL Login, set `db.integratedSecurity=false` and fill `db.user` plus `db.password`.
+
 ---
 
 ## 📋 System Requirements
