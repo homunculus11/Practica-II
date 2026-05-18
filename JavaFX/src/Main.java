@@ -50,11 +50,18 @@ public class Main extends Application {
     private final ListView<Curs> cursList = new ListView<>();
     private final TextArea reportArea = new TextArea();
     private final Map<String, TableView<TableRowData>> tableViews = new LinkedHashMap<>();
+    private final Map<String, Tab> tableTabs = new LinkedHashMap<>();
     private final Label coursesMetric = new Label("-");
     private final Label studentsMetric = new Label("-");
     private final Label enrollmentsMetric = new Label("-");
     private Label statusLabel;
     private BorderPane appRoot;
+    private Tab studentTab;
+    private Tab profesorTab;
+    private Tab cursTab;
+    private Tab raioaneLocalitatiTab;
+    private int raioaneCount = -1;
+    private int localitatiCount = -1;
     private boolean darkMode;
 
     @Override
@@ -74,9 +81,12 @@ public class Main extends Application {
 
         TabPane tabs = new TabPane();
         tabs.getStyleClass().add("main-tabs");
-        tabs.getTabs().add(createStudentTab());
-        tabs.getTabs().add(createProfesorTab());
-        tabs.getTabs().add(createCursTab());
+        studentTab = createStudentTab();
+        profesorTab = createProfesorTab();
+        cursTab = createCursTab();
+        tabs.getTabs().add(studentTab);
+        tabs.getTabs().add(profesorTab);
+        tabs.getTabs().add(cursTab);
         addDatabaseTableTabs(tabs);
         tabs.getTabs().add(createReportTab(primaryStage));
         tabs.getTabs().forEach(tab -> tab.setClosable(false));
@@ -350,6 +360,7 @@ public class Main extends Application {
             VBox.setVgrow(panel, Priority.ALWAYS);
 
             Tab tab = new Tab(tableName, page);
+            tableTabs.put(tableName, tab);
             tab.setOnSelectionChanged(event -> {
                 if (tab.isSelected() && tableView.getColumns().isEmpty()) {
                     loadDatabaseTable(tableName);
@@ -376,9 +387,9 @@ public class Main extends Application {
         VBox.setVgrow(raioanePanel, Priority.ALWAYS);
         VBox.setVgrow(localitatiPanel, Priority.ALWAYS);
 
-        Tab tab = new Tab("Raioane si Localitati", page);
-        tab.setOnSelectionChanged(event -> {
-            if (tab.isSelected()) {
+        raioaneLocalitatiTab = new Tab("Raioane si Localitati", page);
+        raioaneLocalitatiTab.setOnSelectionChanged(event -> {
+            if (raioaneLocalitatiTab.isSelected()) {
                 if (raioaneTable.getColumns().isEmpty()) {
                     loadDatabaseTable("Raioane");
                 }
@@ -387,7 +398,7 @@ public class Main extends Application {
                 }
             }
         });
-        return tab;
+        return raioaneLocalitatiTab;
     }
 
     private VBox databaseTablePanel(String tableName, String description, TableView<TableRowData> tableView) {
@@ -417,8 +428,44 @@ public class Main extends Application {
             }
 
             tableView.setItems(FXCollections.observableArrayList(tableData.getRows()));
+            updateTableTabCount(tableName, tableData.getRows().size());
             statusLabel.setText(tableName + ": " + tableData.getRows().size() + " randuri incarcate");
         });
+    }
+
+    private void updateTableTabCount(String tableName, int count) {
+        if ("Raioane".equals(tableName)) {
+            raioaneCount = count;
+            updateRaioaneLocalitatiTabText();
+            return;
+        }
+        if ("Localitati".equals(tableName)) {
+            localitatiCount = count;
+            updateRaioaneLocalitatiTabText();
+            return;
+        }
+
+        Tab tab = tableTabs.get(tableName);
+        if (tab != null) {
+            setTabCount(tab, tableName, count);
+        }
+    }
+
+    private void updateRaioaneLocalitatiTabText() {
+        if (raioaneLocalitatiTab == null) {
+            return;
+        }
+        if (raioaneCount >= 0 && localitatiCount >= 0) {
+            setTabCount(raioaneLocalitatiTab, "Raioane si Localitati", raioaneCount + localitatiCount);
+        } else if (raioaneCount >= 0) {
+            setTabCount(raioaneLocalitatiTab, "Raioane si Localitati", raioaneCount);
+        } else if (localitatiCount >= 0) {
+            setTabCount(raioaneLocalitatiTab, "Raioane si Localitati", localitatiCount);
+        }
+    }
+
+    private void setTabCount(Tab tab, String title, int count) {
+        tab.setText(title + " (" + count + ")");
     }
 
     private VBox crudLayout(String title, String description, Node list, HBox actions) {
@@ -543,7 +590,9 @@ public class Main extends Application {
     private void showStudentSearchDialog() {
         TextField search = field("Nume student");
         showOptionDialog("Cauta student", form(labeled("Cautare", search, "Scrie numele sau prenumele studentului.")), () -> {
-            studentList.setItems(FXCollections.observableArrayList(studentDAO.search(search.getText())));
+            var rows = studentDAO.search(search.getText());
+            studentList.setItems(FXCollections.observableArrayList(rows));
+            setTabCount(studentTab, "Studenti", rows.size());
             statusLabel.setText("Cautare studenti: " + search.getText());
         });
     }
@@ -583,7 +632,9 @@ public class Main extends Application {
     private void showProfesorSearchDialog() {
         TextField search = field("Nume sau certificare");
         showOptionDialog("Cauta profesor", form(labeled("Cautare", search, "Scrie nume, prenume sau certificare.")), () -> {
-            profesorList.setItems(FXCollections.observableArrayList(profesorDAO.search(search.getText())));
+            var rows = profesorDAO.search(search.getText());
+            profesorList.setItems(FXCollections.observableArrayList(rows));
+            setTabCount(profesorTab, "Profesori", rows.size());
             statusLabel.setText("Cautare profesori: " + search.getText());
         });
     }
@@ -632,7 +683,9 @@ public class Main extends Application {
                         labeled("Cautare", search, "Scrie o parte din denumire."),
                         labeled("Tip predare", tip, "Alege filtrul pentru tip.")),
                 () -> {
-                    cursList.setItems(FXCollections.observableArrayList(cursDAO.search(search.getText(), tip.getValue())));
+                    var rows = cursDAO.search(search.getText(), tip.getValue());
+                    cursList.setItems(FXCollections.observableArrayList(rows));
+                    setTabCount(cursTab, "Cursuri", rows.size());
                     statusLabel.setText("Cautare cursuri: " + search.getText());
                 });
     }
@@ -729,6 +782,7 @@ public class Main extends Application {
         loadStudents();
         loadProfesori();
         loadCursuri();
+        loadDatabaseTableCounts();
         runSafely(() -> updateMetrics());
     }
 
@@ -739,15 +793,38 @@ public class Main extends Application {
     }
 
     private void loadStudents() {
-        runSafely(() -> studentList.setItems(FXCollections.observableArrayList(studentDAO.findAll())));
+        runSafely(() -> {
+            var rows = studentDAO.findAll();
+            studentList.setItems(FXCollections.observableArrayList(rows));
+            setTabCount(studentTab, "Studenti", rows.size());
+        });
     }
 
     private void loadProfesori() {
-        runSafely(() -> profesorList.setItems(FXCollections.observableArrayList(profesorDAO.findAll())));
+        runSafely(() -> {
+            var rows = profesorDAO.findAll();
+            profesorList.setItems(FXCollections.observableArrayList(rows));
+            setTabCount(profesorTab, "Profesori", rows.size());
+        });
     }
 
     private void loadCursuri() {
-        runSafely(() -> cursList.setItems(FXCollections.observableArrayList(cursDAO.findAll())));
+        runSafely(() -> {
+            var rows = cursDAO.findAll();
+            cursList.setItems(FXCollections.observableArrayList(rows));
+            setTabCount(cursTab, "Cursuri", rows.size());
+        });
+    }
+
+    private void loadDatabaseTableCounts() {
+        runSafely(() -> {
+            for (String tableName : tableDAO.tableNames()) {
+                if ("Studenti".equals(tableName) || "Profesori".equals(tableName) || "Cursuri".equals(tableName)) {
+                    continue;
+                }
+                updateTableTabCount(tableName, tableDAO.countRows(tableName));
+            }
+        });
     }
 
     private void export(Stage stage, String defaultName, String content) throws IOException {

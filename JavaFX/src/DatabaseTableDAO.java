@@ -63,6 +63,19 @@ public class DatabaseTableDAO {
         }
     }
 
+    public int countRows(String tableName) throws SQLException {
+        if (!TABLES.containsKey(tableName)) {
+            throw new SQLException("Tabel necunoscut: " + tableName);
+        }
+
+        String sql = "SELECT COUNT(*) FROM " + quote(tableName);
+        try (Connection connection = database.getConnection();
+             PreparedStatement statement = connection.prepareStatement(sql);
+             ResultSet rs = statement.executeQuery()) {
+            return rs.next() ? rs.getInt(1) : 0;
+        }
+    }
+
     private String quote(String identifier) {
         return "[" + identifier.replace("]", "]]") + "]";
     }
