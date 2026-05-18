@@ -204,7 +204,7 @@ public class Main extends Application {
     }
 
     private Tab createStudentTab() {
-        Button refresh = secondary("Arata tot");
+        Button refresh = secondary("Toate inregistrarile");
         refresh.setOnAction(event -> showConfirmAction("Reincarca studenti", "Reincarci lista completa de studenti?", this::loadStudents));
         Button searchButton = secondary("Cauta");
         searchButton.setOnAction(event -> showStudentSearchDialog());
@@ -225,10 +225,10 @@ public class Main extends Application {
                 "Studenti",
                 "Alege o optiune din bara de sus. Formularele se deschid in ferestre mici.",
                 studentList,
-                actionPanel("Studenti", refresh, searchButton, add, update, delete)));
+                actionPanel("Studenti", refresh, update, add, delete, searchButton)));
     }
     private Tab createProfesorTab() {
-        Button refresh = secondary("Arata tot");
+        Button refresh = secondary("Toate inregistrarile");
         refresh.setOnAction(event -> showConfirmAction("Reincarca profesori", "Reincarci lista completa de profesori?", this::loadProfesori));
         Button searchButton = secondary("Cauta");
         searchButton.setOnAction(event -> showProfesorSearchDialog());
@@ -249,10 +249,10 @@ public class Main extends Application {
                 "Profesori",
                 "Alege o optiune din bara de sus. Modificarea foloseste profesorul selectat.",
                 profesorList,
-                actionPanel("Profesori", refresh, searchButton, add, update, delete)));
+                actionPanel("Profesori", refresh, update, add, delete, searchButton)));
     }
     private Tab createCursTab() {
-        Button refresh = secondary("Arata tot");
+        Button refresh = secondary("Toate inregistrarile");
         refresh.setOnAction(event -> showConfirmAction("Reincarca cursuri", "Reincarci lista completa de cursuri?", this::loadCursuri));
         Button searchButton = secondary("Cauta / filtreaza");
         searchButton.setOnAction(event -> showCursSearchDialog());
@@ -273,7 +273,7 @@ public class Main extends Application {
                 "Cursuri",
                 "Alege o optiune din bara de sus. Modificarea foloseste cursul selectat.",
                 cursList,
-                actionPanel("Cursuri", refresh, searchButton, add, update, delete)));
+                actionPanel("Cursuri", refresh, update, add, delete, searchButton)));
     }
     private Tab createReportTab(Stage stage) {
         reportArea.setEditable(false);
@@ -577,12 +577,12 @@ public class Main extends Application {
         return grid;
     }
 
-    private HBox actionPanel(String entity, Button refresh, Button search, Button add, Button update, Button delete) {
-        HBox panel = new HBox(10, refresh, search, add, update, delete);
+    private HBox actionPanel(String entity, Button refresh, Button update, Button add, Button delete, Button search) {
+        HBox panel = new HBox(10, refresh, update, add, delete, search);
         panel.getStyleClass().add("options-bar");
         panel.setAlignment(Pos.CENTER_LEFT);
-        for (Button button : new Button[] { refresh, search, add, update, delete }) {
-            button.setMinWidth(120);
+        for (Button button : new Button[] { refresh, update, add, delete, search }) {
+            button.setMinWidth(button == refresh ? 170 : 120);
         }
         return panel;
     }
