@@ -15,6 +15,17 @@ java {
     targetCompatibility = JavaVersion.VERSION_25
 }
 
+sourceSets {
+    main {
+        java {
+            srcDirs = ['../src']
+        }
+        resources {
+            srcDirs = ['../resources']
+        }
+    }
+}
+
 javafx {
     version = "25"
     modules = [ 'javafx.controls', 'javafx.fxml', 'javafx.graphics', 'javafx.media' ]
@@ -22,6 +33,7 @@ javafx {
 
 dependencies {
     // JavaFX dependencies are automatically handled by javafxplugin
+    implementation files('../lib/mssql-jdbc.jar')
 }
 
 tasks.named('run', JavaExec) {

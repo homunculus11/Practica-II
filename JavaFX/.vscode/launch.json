@@ -6,7 +6,12 @@
       "name": "Debug Main",
       "request": "launch",
       "mainClass": "Main",
-      "vmArgs": "--module-path configurations/javafx-25-sdk/lib --add-modules javafx.controls",
+      "classPaths": [
+        "build/classes",
+        "resources",
+        "lib/mssql-jdbc.jar"
+      ],
+      "vmArgs": "--enable-native-access=javafx.graphics,ALL-UNNAMED --module-path configurations/javafx-25-sdk/lib --add-modules javafx.controls -Djava.library.path=../z-Others",
       "preLaunchTask": "Build Main"
     }
   ]

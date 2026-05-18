@@ -1,0 +1,5 @@
+*.class
+run-app.err.log
+run-app.out.log
+JavaFX/build/
+JavaFX/configurations/install.log

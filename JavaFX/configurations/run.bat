@@ -104,7 +104,8 @@ echo.
 echo Using JDK: %JDK_HOME%
 echo.
 echo Compiling Java sources...
-"%JAVAC_CMD%" -encoding UTF-8 --module-path configurations\javafx-25-sdk\lib --add-modules javafx.controls --class-path "mssql-jdbc.jar" *.java
+if not exist "build\classes" mkdir "build\classes"
+"%JAVAC_CMD%" -encoding UTF-8 --module-path configurations\javafx-25-sdk\lib --add-modules javafx.controls --class-path "lib\mssql-jdbc.jar" -d "build\classes" src\*.java
 
 if %ERRORLEVEL% neq 0 (
     echo.
@@ -119,7 +120,7 @@ if %ERRORLEVEL% neq 0 (
     echo    - Check: configurations\javafx-25-sdk\lib\ contains JAR files
     echo.
     echo 3. SQL Server JDBC driver not found
-    echo    - Check: ..\mssql-jdbc.jar exists
+    echo    - Check: lib\mssql-jdbc.jar exists
     echo.
     pause
     exit /b 1
@@ -131,7 +132,7 @@ echo.
 echo Running Main...
 echo.
 
-"%JAVA_CMD%" -Djava.library.path="..\z-Others;..\sqljdbc_13.4\enu\auth\x64" --module-path configurations\javafx-25-sdk\lib --add-modules javafx.controls --class-path "mssql-jdbc.jar;." Main
+"%JAVA_CMD%" --enable-native-access=javafx.graphics,ALL-UNNAMED -Djava.library.path="..\z-Others" --module-path configurations\javafx-25-sdk\lib --add-modules javafx.controls --class-path "build\classes;resources;lib\mssql-jdbc.jar" Main
 exit /b %ERRORLEVEL%
 
 :install_jdk

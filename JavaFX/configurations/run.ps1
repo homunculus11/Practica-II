@@ -98,7 +98,8 @@ if (-not $javaHome -or -not (Test-Path "$javaHome\bin\java.exe") -or -not (Test-
 Write-Host "Using Java from: $javaHome" -ForegroundColor Green
 Write-Host ""
 Write-Host "Compiling Java sources..." -ForegroundColor Cyan
-& "$javaHome\bin\javac" -encoding UTF-8 --module-path configurations\javafx-25-sdk\lib --add-modules javafx.controls --class-path "mssql-jdbc.jar" *.java
+New-Item -ItemType Directory -Force -Path "build\classes" | Out-Null
+& "$javaHome\bin\javac" -encoding UTF-8 --module-path configurations\javafx-25-sdk\lib --add-modules javafx.controls --class-path "lib\mssql-jdbc.jar" -d "build\classes" src\*.java
 
 if ($LASTEXITCODE -ne 0) {
     Write-Host "[ERROR] Compilation failed!" -ForegroundColor Red
@@ -112,7 +113,7 @@ if ($LASTEXITCODE -ne 0) {
     Write-Host "   - Check: configurations\javafx-25-sdk\lib\ contains JAR files" -ForegroundColor Yellow
     Write-Host "" -ForegroundColor Yellow
     Write-Host "3. SQL Server JDBC driver not found" -ForegroundColor Yellow
-    Write-Host "   - Check: ..\mssql-jdbc.jar exists" -ForegroundColor Yellow
+    Write-Host "   - Check: lib\mssql-jdbc.jar exists" -ForegroundColor Yellow
     exit 1
 }
 
@@ -120,4 +121,4 @@ Write-Host "[OK] Compilation successful!" -ForegroundColor Green
 Write-Host "Running Main..." -ForegroundColor Cyan
 Write-Host ""
 
-& "$javaHome\bin\java" "-Djava.library.path=..\z-Others;..\sqljdbc_13.4\enu\auth\x64" --module-path configurations\javafx-25-sdk\lib --add-modules javafx.controls --class-path "mssql-jdbc.jar;." Main
+& "$javaHome\bin\java" --enable-native-access=javafx.graphics,ALL-UNNAMED "-Djava.library.path=..\z-Others" --module-path configurations\javafx-25-sdk\lib --add-modules javafx.controls --class-path "build\classes;resources;lib\mssql-jdbc.jar" Main
