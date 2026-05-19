@@ -33,7 +33,10 @@ public class ProfesorDAO {
 
     public List<Profesor> search(String text) throws SQLException {
         String sql = "SELECT ProfesorID, NumeProfesor, PrenumeProfesor, Email, TipCertificare FROM Profesori "
-                + "WHERE NumeProfesor LIKE ? OR PrenumeProfesor LIKE ? OR TipCertificare LIKE ? ORDER BY ProfesorID";
+                + "WHERE NumeProfesor LIKE ? OR PrenumeProfesor LIKE ? "
+                + "OR CONCAT(NumeProfesor, ' ', PrenumeProfesor) LIKE ? "
+                + "OR CONCAT(PrenumeProfesor, ' ', NumeProfesor) LIKE ? "
+                + "OR TipCertificare LIKE ? ORDER BY ProfesorID";
         List<Profesor> profesori = new ArrayList<>();
         String filter = "%" + text + "%";
         try (Connection connection = database.getConnection();
@@ -41,6 +44,8 @@ public class ProfesorDAO {
             statement.setString(1, filter);
             statement.setString(2, filter);
             statement.setString(3, filter);
+            statement.setString(4, filter);
+            statement.setString(5, filter);
             try (ResultSet rs = statement.executeQuery()) {
                 while (rs.next()) {
                     profesori.add(mapProfesor(rs));

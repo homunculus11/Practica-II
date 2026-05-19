@@ -381,8 +381,66 @@ public class Main extends Application {
 
         VBox raioanePanel = databaseTablePanel("Raioane", "Lista raioanelor disponibile in baza de date.", raioaneTable);
         VBox localitatiPanel = databaseTablePanel("Localitati", "Localitati legate de raioane.", localitatiTable);
+        VBox[] panels = { raioanePanel, localitatiPanel };
+        String[] tableNames = { "Raioane", "Localitati" };
+        int[] currentPanel = { 0 };
 
-        VBox page = new VBox(14, raioanePanel, localitatiPanel);
+        Button previous = secondary("<");
+        previous.setTooltip(new Tooltip("Afiseaza Raioane"));
+        previous.setMinWidth(52);
+
+        Button next = secondary(">");
+        next.setTooltip(new Tooltip("Afiseaza Localitati"));
+        next.setMinWidth(52);
+
+        Label activeTable = new Label("Raioane");
+        activeTable.getStyleClass().add("panel-title");
+
+        Region spacer = new Region();
+        HBox.setHgrow(spacer, Priority.ALWAYS);
+
+        HBox navigator = new HBox(10, previous, next, spacer, activeTable);
+        navigator.getStyleClass().add("options-bar");
+        navigator.setAlignment(Pos.CENTER_LEFT);
+
+        Runnable updateVisibleTable = () -> {
+            for (int i = 0; i < panels.length; i++) {
+                boolean selected = i == currentPanel[0];
+                panels[i].setVisible(selected);
+                panels[i].setManaged(selected);
+            }
+
+            previous.setDisable(currentPanel[0] == 0);
+            next.setDisable(currentPanel[0] == panels.length - 1);
+            activeTable.setText(tableNames[currentPanel[0]]);
+        };
+
+        Runnable loadVisibleTable = () -> {
+            TableView<TableRowData> tableView = tableViews.get(tableNames[currentPanel[0]]);
+            if (tableView.getColumns().isEmpty()) {
+                loadDatabaseTable(tableNames[currentPanel[0]]);
+            }
+        };
+
+        previous.setOnAction(event -> {
+            if (currentPanel[0] > 0) {
+                currentPanel[0]--;
+                updateVisibleTable.run();
+                loadVisibleTable.run();
+            }
+        });
+
+        next.setOnAction(event -> {
+            if (currentPanel[0] < panels.length - 1) {
+                currentPanel[0]++;
+                updateVisibleTable.run();
+                loadVisibleTable.run();
+            }
+        });
+
+        updateVisibleTable.run();
+
+        VBox page = new VBox(14, navigator, raioanePanel, localitatiPanel);
         page.getStyleClass().add("page");
         VBox.setVgrow(raioanePanel, Priority.ALWAYS);
         VBox.setVgrow(localitatiPanel, Priority.ALWAYS);
@@ -390,12 +448,8 @@ public class Main extends Application {
         raioaneLocalitatiTab = new Tab("Raioane si Localitati", page);
         raioaneLocalitatiTab.setOnSelectionChanged(event -> {
             if (raioaneLocalitatiTab.isSelected()) {
-                if (raioaneTable.getColumns().isEmpty()) {
-                    loadDatabaseTable("Raioane");
-                }
-                if (localitatiTable.getColumns().isEmpty()) {
-                    loadDatabaseTable("Localitati");
-                }
+                updateVisibleTable.run();
+                loadVisibleTable.run();
             }
         });
         return raioaneLocalitatiTab;

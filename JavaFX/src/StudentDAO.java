@@ -40,6 +40,8 @@ public class StudentDAO {
                 + "FROM Studenti s "
                 + "LEFT JOIN Participari_Cursuri p ON s.StudentID = p.StudentID "
                 + "WHERE s.NumeStudent LIKE ? OR s.PrenumeStudent LIKE ? "
+                + "OR CONCAT(s.NumeStudent, ' ', s.PrenumeStudent) LIKE ? "
+                + "OR CONCAT(s.PrenumeStudent, ' ', s.NumeStudent) LIKE ? "
                 + "GROUP BY s.StudentID, s.NumeStudent, s.PrenumeStudent, s.DataNasterii "
                 + "ORDER BY s.StudentID";
         List<Student> studenti = new ArrayList<>();
@@ -48,6 +50,8 @@ public class StudentDAO {
              PreparedStatement statement = connection.prepareStatement(sql)) {
             statement.setString(1, filter);
             statement.setString(2, filter);
+            statement.setString(3, filter);
+            statement.setString(4, filter);
             try (ResultSet rs = statement.executeQuery()) {
                 while (rs.next()) {
                     studenti.add(mapStudent(rs));
