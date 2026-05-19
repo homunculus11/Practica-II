@@ -19,14 +19,18 @@ import javafx.scene.control.TableView;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
 import javafx.scene.control.Tooltip;
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
+import javafx.scene.shape.Circle;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
+import javafx.stage.StageStyle;
 
 import java.io.File;
 import java.io.FileWriter;
@@ -54,7 +58,9 @@ public class Main extends Application {
     private final Label coursesMetric = new Label("-");
     private final Label studentsMetric = new Label("-");
     private final Label enrollmentsMetric = new Label("-");
+    private Image appLogo;
     private Label statusLabel;
+    private Circle databaseStatusLight;
     private BorderPane appRoot;
     private Tab studentTab;
     private Tab profesorTab;
@@ -62,10 +68,14 @@ public class Main extends Application {
     private Tab raioaneLocalitatiTab;
     private int raioaneCount = -1;
     private int localitatiCount = -1;
+    private String activeRaioaneLocalitatiTable = "Raioane";
     private boolean darkMode;
+    private double windowDragOffsetX;
+    private double windowDragOffsetY;
 
     @Override
     public void start(Stage primaryStage) {
+        primaryStage.initStyle(StageStyle.UNDECORATED);
         DatabaseConfig config = DatabaseConfig.load();
         database = new Database(config);
         studentDAO = new StudentDAO(database);
@@ -73,6 +83,7 @@ public class Main extends Application {
         cursDAO = new CursDAO(database);
         inrolareDAO = new InrolareDAO(database);
         tableDAO = new DatabaseTableDAO(database);
+        appLogo = new Image(getClass().getResourceAsStream("app-logo.png"));
 
         statusLabel = new Label("Conectare: " + config.describe());
         statusLabel.getStyleClass().add("status-label");
@@ -90,10 +101,11 @@ public class Main extends Application {
         addDatabaseTableTabs(tabs);
         tabs.getTabs().add(createReportTab(primaryStage));
         tabs.getTabs().forEach(tab -> tab.setClosable(false));
+        tabs.getSelectionModel().selectedItemProperty().addListener((observable, oldTab, selectedTab) -> updateStatusForSelectedTab(selectedTab));
 
         appRoot = new BorderPane();
         appRoot.getStyleClass().add("app-root");
-        appRoot.setTop(createTopBar());
+        appRoot.setTop(new VBox(createWindowTitleBar(primaryStage), createTopBar()));
         appRoot.setCenter(tabs);
         appRoot.setBottom(statusLabel);
         BorderPane.setMargin(statusLabel, new Insets(0, 24, 18, 24));
@@ -104,6 +116,7 @@ public class Main extends Application {
         primaryStage.setMinHeight(640);
         primaryStage.setScene(scene);
         primaryStage.setTitle("Practica II - Cursuri Online");
+        primaryStage.getIcons().add(appLogo);
         primaryStage.show();
 
         testAndLoad();
@@ -158,6 +171,58 @@ public class Main extends Application {
         });
     }
 
+    private HBox createWindowTitleBar(Stage stage) {
+        ImageView icon = new ImageView(appLogo);
+        icon.getStyleClass().add("window-icon");
+        icon.setFitWidth(18);
+        icon.setFitHeight(18);
+        icon.setPreserveRatio(true);
+        icon.setSmooth(true);
+
+        Label title = new Label("Practica II - Cursuri Online");
+        title.getStyleClass().add("window-title");
+
+        Region spacer = new Region();
+        HBox.setHgrow(spacer, Priority.ALWAYS);
+
+        Button minimize = titleBarButton("_");
+        minimize.setOnAction(event -> stage.setIconified(true));
+
+        Button maximize = titleBarButton("[]");
+        maximize.setOnAction(event -> stage.setMaximized(!stage.isMaximized()));
+
+        Button close = titleBarButton("X");
+        close.getStyleClass().add("window-close-button");
+        close.setOnAction(event -> stage.close());
+
+        HBox titleBar = new HBox(8, icon, title, spacer, minimize, maximize, close);
+        titleBar.getStyleClass().add("window-title-bar");
+        titleBar.setAlignment(Pos.CENTER_LEFT);
+        titleBar.setOnMousePressed(event -> {
+            windowDragOffsetX = event.getSceneX();
+            windowDragOffsetY = event.getSceneY();
+        });
+        titleBar.setOnMouseDragged(event -> {
+            if (!stage.isMaximized()) {
+                stage.setX(event.getScreenX() - windowDragOffsetX);
+                stage.setY(event.getScreenY() - windowDragOffsetY);
+            }
+        });
+        titleBar.setOnMouseClicked(event -> {
+            if (event.getClickCount() == 2) {
+                stage.setMaximized(!stage.isMaximized());
+            }
+        });
+        return titleBar;
+    }
+
+    private Button titleBarButton(String text) {
+        Button button = new Button(text);
+        button.getStyleClass().add("window-title-button");
+        button.setFocusTraversable(false);
+        return button;
+    }
+
     private HBox createTopBar() {
         Label title = new Label("Cursuri Online");
         title.getStyleClass().add("app-title");
@@ -167,12 +232,20 @@ public class Main extends Application {
 
         VBox copy = new VBox(4, title, subtitle);
 
+        databaseStatusLight = new Circle(4);
+        databaseStatusLight.getStyleClass().addAll("db-status-light", "db-disconnected");
+        databaseStatusLight.setManaged(true);
+
         Label db = new Label(database.getConfig().describe());
-        db.getStyleClass().add("db-pill");
+        db.getStyleClass().add("db-pill-text");
+
+        HBox dbPill = new HBox(8, databaseStatusLight, db);
+        dbPill.getStyleClass().add("db-pill");
+        dbPill.setAlignment(Pos.CENTER_LEFT);
 
         Button testButton = new Button("Verifica baza de date");
         testButton.getStyleClass().addAll("button", "secondary-button");
-        testButton.setOnAction(event -> testAndLoad());
+        testButton.setOnAction(event -> verifyDatabaseWithDialog());
 
         Button themeButton = new Button("\u263E");
         themeButton.getStyleClass().addAll("button", "theme-toggle");
@@ -182,7 +255,7 @@ public class Main extends Application {
         Region spacer = new Region();
         HBox.setHgrow(spacer, Priority.ALWAYS);
 
-        HBox bar = new HBox(18, copy, spacer, db, testButton, themeButton);
+        HBox bar = new HBox(18, copy, spacer, dbPill, testButton, themeButton);
         bar.getStyleClass().add("hero-bar");
         bar.setAlignment(Pos.CENTER_LEFT);
         return bar;
@@ -194,13 +267,21 @@ public class Main extends Application {
             appRoot.getStyleClass().add("dark-mode");
             themeButton.setText("\u2600");
             themeButton.setTooltip(new Tooltip("Schimba la light mode"));
-            statusLabel.setText("Tema dark mode activata");
         } else {
             appRoot.getStyleClass().remove("dark-mode");
             themeButton.setText("\u263E");
             themeButton.setTooltip(new Tooltip("Schimba la dark mode"));
-            statusLabel.setText("Tema light mode activata");
         }
+    }
+
+    private void setDatabaseConnected(boolean connected) {
+        if (databaseStatusLight == null) {
+            return;
+        }
+
+        databaseStatusLight.getStyleClass().removeAll("db-connected", "db-disconnected");
+        databaseStatusLight.getStyleClass().add(connected ? "db-connected" : "db-disconnected");
+        databaseStatusLight.setAccessibleText(connected ? "Conectat la baza de date" : "Deconectat de la baza de date");
     }
 
     private Tab createStudentTab() {
@@ -221,11 +302,17 @@ public class Main extends Application {
             }
         }));
 
-        return new Tab("Studenti", crudLayout(
+        Tab tab = new Tab("Studenti", crudLayout(
                 "Studenti",
                 "Alege o optiune din bara de sus. Formularele se deschid in ferestre mici.",
                 studentList,
                 actionPanel("Studenti", refresh, update, add, delete, searchButton)));
+        tab.setOnSelectionChanged(event -> {
+            if (tab.isSelected()) {
+                updateStudentStatus();
+            }
+        });
+        return tab;
     }
     private Tab createProfesorTab() {
         Button refresh = secondary("Toate inregistrarile");
@@ -245,11 +332,17 @@ public class Main extends Application {
             }
         }));
 
-        return new Tab("Profesori", crudLayout(
+        Tab tab = new Tab("Profesori", crudLayout(
                 "Profesori",
                 "Alege o optiune din bara de sus. Modificarea foloseste profesorul selectat.",
                 profesorList,
                 actionPanel("Profesori", refresh, update, add, delete, searchButton)));
+        tab.setOnSelectionChanged(event -> {
+            if (tab.isSelected()) {
+                updateProfesorStatus();
+            }
+        });
+        return tab;
     }
     private Tab createCursTab() {
         Button refresh = secondary("Toate inregistrarile");
@@ -269,11 +362,17 @@ public class Main extends Application {
             }
         }));
 
-        return new Tab("Cursuri", crudLayout(
+        Tab tab = new Tab("Cursuri", crudLayout(
                 "Cursuri",
                 "Alege o optiune din bara de sus. Modificarea foloseste cursul selectat.",
                 cursList,
                 actionPanel("Cursuri", refresh, update, add, delete, searchButton)));
+        tab.setOnSelectionChanged(event -> {
+            if (tab.isSelected()) {
+                updateCursStatus();
+            }
+        });
+        return tab;
     }
     private Tab createReportTab(Stage stage) {
         reportArea.setEditable(false);
@@ -325,7 +424,13 @@ public class Main extends Application {
 
         VBox content = new VBox(panel);
         content.getStyleClass().add("page");
-        return new Tab("Rapoarte", content);
+        Tab tab = new Tab("Rapoarte", content);
+        tab.setOnSelectionChanged(event -> {
+            if (tab.isSelected()) {
+                updateReportStatus();
+            }
+        });
+        return tab;
     }
 
     private void addDatabaseTableTabs(TabPane tabs) {
@@ -413,12 +518,16 @@ public class Main extends Application {
             previous.setDisable(currentPanel[0] == 0);
             next.setDisable(currentPanel[0] == panels.length - 1);
             activeTable.setText(tableNames[currentPanel[0]]);
+            activeRaioaneLocalitatiTable = tableNames[currentPanel[0]];
         };
 
         Runnable loadVisibleTable = () -> {
-            TableView<TableRowData> tableView = tableViews.get(tableNames[currentPanel[0]]);
+            String tableName = tableNames[currentPanel[0]];
+            TableView<TableRowData> tableView = tableViews.get(tableName);
             if (tableView.getColumns().isEmpty()) {
-                loadDatabaseTable(tableNames[currentPanel[0]]);
+                loadDatabaseTable(tableName);
+            } else {
+                updateLoadedTableStatus(tableName);
             }
         };
 
@@ -483,8 +592,14 @@ public class Main extends Application {
 
             tableView.setItems(FXCollections.observableArrayList(tableData.getRows()));
             updateTableTabCount(tableName, tableData.getRows().size());
-            statusLabel.setText(tableName + ": " + tableData.getRows().size() + " randuri incarcate");
+            updateLoadedTableStatus(tableName);
         });
+    }
+
+    private void updateLoadedTableStatus(String tableName) {
+        TableView<TableRowData> tableView = tableViews.get(tableName);
+        int rows = tableView == null ? 0 : tableView.getItems().size();
+        statusLabel.setText(tableName + ": " + rows + " randuri incarcate");
     }
 
     private void updateTableTabCount(String tableName, int count) {
@@ -795,10 +910,11 @@ public class Main extends Application {
     private void showOptionDialog(String title, Node content, CheckedRunnable action) {
         Dialog<ButtonType> dialog = new Dialog<>();
         dialog.setTitle(title);
-        dialog.setHeaderText(null);
+        dialog.setHeaderText(title);
         dialog.getDialogPane().getButtonTypes().addAll(ButtonType.OK, ButtonType.CANCEL);
         dialog.getDialogPane().setContent(content);
         dialog.getDialogPane().setMinWidth(520);
+        stylePopup(dialog);
         Optional<ButtonType> result = dialog.showAndWait();
         if (result.isPresent() && result.get() == ButtonType.OK) {
             runSafely(action);
@@ -829,8 +945,10 @@ public class Main extends Application {
     private void testAndLoad() {
         runSafely(() -> {
             if (!database.testConnection()) {
+                setDatabaseConnected(false);
                 throw new SQLException("Conexiunea la SQL Server a eșuat. Verifică db.properties și baza de date din SSMS.");
             }
+            setDatabaseConnected(true);
             statusLabel.setText("Conectat la " + database.getConfig().describe());
         });
         loadStudents();
@@ -838,6 +956,29 @@ public class Main extends Application {
         loadCursuri();
         loadDatabaseTableCounts();
         runSafely(() -> updateMetrics());
+    }
+
+    private void verifyDatabaseWithDialog() {
+        if (database.testConnection()) {
+            setDatabaseConnected(true);
+            Alert alert = new Alert(Alert.AlertType.INFORMATION);
+            alert.setTitle("Baza de date");
+            alert.setHeaderText("Conexiune activa");
+            alert.setContentText("Esti conectat la " + database.getConfig().describe() + ".");
+            stylePopup(alert);
+            alert.showAndWait();
+            testAndLoad();
+            return;
+        }
+
+        setDatabaseConnected(false);
+        Alert alert = new Alert(Alert.AlertType.ERROR);
+        alert.setTitle("Baza de date");
+        alert.setHeaderText("Baza de date nu a fost gasita");
+        alert.setContentText("Nu se poate realiza conexiunea la " + database.getConfig().describe()
+                + ". Verifica SQL Server, db.properties si baza de date din SSMS.");
+        stylePopup(alert);
+        alert.showAndWait();
     }
 
     private void updateMetrics() throws SQLException {
@@ -851,6 +992,9 @@ public class Main extends Application {
             var rows = studentDAO.findAll();
             studentList.setItems(FXCollections.observableArrayList(rows));
             setTabCount(studentTab, "Studenti", rows.size());
+            if (studentTab.isSelected()) {
+                updateStudentStatus();
+            }
         });
     }
 
@@ -859,6 +1003,9 @@ public class Main extends Application {
             var rows = profesorDAO.findAll();
             profesorList.setItems(FXCollections.observableArrayList(rows));
             setTabCount(profesorTab, "Profesori", rows.size());
+            if (profesorTab.isSelected()) {
+                updateProfesorStatus();
+            }
         });
     }
 
@@ -867,7 +1014,91 @@ public class Main extends Application {
             var rows = cursDAO.findAll();
             cursList.setItems(FXCollections.observableArrayList(rows));
             setTabCount(cursTab, "Cursuri", rows.size());
+            if (cursTab.isSelected()) {
+                updateCursStatus();
+            }
         });
+    }
+
+    private void updateStudentStatus() {
+        int students = studentList.getItems().size();
+        double averageEnrollments = studentList.getItems().stream()
+                .mapToInt(Student::getNumarInrolari)
+                .average()
+                .orElse(0);
+        statusLabel.setText(String.format("Studenti: %d inregistrari | Medie cursuri inscrise: %.1f", students, averageEnrollments));
+    }
+
+    private void updateProfesorStatus() {
+        int professors = profesorList.getItems().size();
+        double averageRating = profesorList.getItems().stream()
+                .mapToDouble(Profesor::getRating)
+                .average()
+                .orElse(0);
+        statusLabel.setText(String.format("Profesori: %d inregistrari | Rating mediu: %.1f", professors, averageRating));
+    }
+
+    private void updateCursStatus() {
+        int courses = cursList.getItems().size();
+        double averagePrice = cursList.getItems().stream()
+                .mapToDouble(Curs::getPret)
+                .average()
+                .orElse(0);
+        statusLabel.setText(String.format("Cursuri: %d inregistrari | Pret mediu: %.2f lei", courses, averagePrice));
+    }
+
+    private void updateReportStatus() {
+        String text = String.format("Rapoarte: %s cursuri | %s studenti | %s inrolari",
+                coursesMetric.getText(),
+                studentsMetric.getText(),
+                enrollmentsMetric.getText());
+        statusLabel.setText(text);
+    }
+
+    private void updateStatusForSelectedTab(Tab selectedTab) {
+        if (selectedTab == null) {
+            return;
+        }
+
+        if (selectedTab == studentTab) {
+            updateStudentStatus();
+            return;
+        }
+        if (selectedTab == profesorTab) {
+            updateProfesorStatus();
+            return;
+        }
+        if (selectedTab == cursTab) {
+            updateCursStatus();
+            return;
+        }
+        if (selectedTab == raioaneLocalitatiTab) {
+            updateTableStatusOrLoad(activeRaioaneLocalitatiTable);
+            return;
+        }
+        if ("Rapoarte".equals(selectedTab.getText())) {
+            updateReportStatus();
+            return;
+        }
+
+        for (Map.Entry<String, Tab> entry : tableTabs.entrySet()) {
+            if (entry.getValue() == selectedTab) {
+                updateTableStatusOrLoad(entry.getKey());
+                return;
+            }
+        }
+    }
+
+    private void updateTableStatusOrLoad(String tableName) {
+        TableView<TableRowData> tableView = tableViews.get(tableName);
+        if (tableView == null) {
+            return;
+        }
+        if (tableView.getColumns().isEmpty()) {
+            loadDatabaseTable(tableName);
+        } else {
+            updateLoadedTableStatus(tableName);
+        }
     }
 
     private void loadDatabaseTableCounts() {
@@ -894,11 +1125,21 @@ public class Main extends Application {
         statusLabel.setText("Export realizat: " + file.getAbsolutePath());
     }
 
+    private void stylePopup(Dialog<?> dialog) {
+        dialog.initOwner(appRoot.getScene().getWindow());
+        dialog.getDialogPane().getStyleClass().add("app-dialog");
+        if (darkMode) {
+            dialog.getDialogPane().getStyleClass().add("app-dialog-dark");
+        }
+        dialog.getDialogPane().getStylesheets().add(getClass().getResource("styles.css").toExternalForm());
+    }
+
     private boolean confirmDelete(String title, String message) {
         Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
         alert.setTitle(title);
         alert.setHeaderText("Confirmare necesara");
         alert.setContentText(message);
+        stylePopup(alert);
         Optional<ButtonType> result = alert.showAndWait();
         return result.isPresent() && result.get() == ButtonType.OK;
     }
@@ -955,6 +1196,7 @@ public class Main extends Application {
             alert.setTitle("Eroare");
             alert.setHeaderText("Operația nu a reușit");
             alert.setContentText(ex.getMessage());
+            stylePopup(alert);
             alert.showAndWait();
         }
     }

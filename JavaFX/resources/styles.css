@@ -3,6 +3,93 @@
     -fx-font-family: "Segoe UI", "Arial";
 }
 
+.window-title-bar {
+    -fx-background-color: #ffffff;
+    -fx-padding: 0 10 0 10;
+    -fx-min-height: 36;
+    -fx-pref-height: 36;
+}
+
+.window-icon {
+    -fx-effect: dropshadow(gaussian, rgba(17, 24, 39, 0.18), 5, 0.18, 0, 1);
+}
+
+.window-title {
+    -fx-text-fill: #111827;
+    -fx-font-size: 12px;
+}
+
+.window-title-button {
+    -fx-background-color: transparent;
+    -fx-background-radius: 0;
+    -fx-border-color: transparent;
+    -fx-text-fill: #111827;
+    -fx-font-size: 12px;
+    -fx-alignment: CENTER;
+    -fx-min-width: 54;
+    -fx-pref-width: 54;
+    -fx-min-height: 33;
+    -fx-padding: 0;
+    -fx-cursor: hand;
+}
+
+.window-title-button:hover {
+    -fx-background-color: #e8eef4;
+}
+
+.window-close-button:hover {
+    -fx-background-color: #d83b3b;
+    -fx-text-fill: #ffffff;
+}
+
+.app-dialog {
+    -fx-background-color: #f8fbfd;
+    -fx-border-color: #9fb8cd;
+    -fx-border-width: 1.5;
+    -fx-border-radius: 8;
+    -fx-background-radius: 8;
+    -fx-font-family: "Segoe UI", "Arial";
+}
+
+.app-dialog .header-panel {
+    -fx-background-color: #10263d;
+    -fx-padding: 18 22 16 22;
+}
+
+.app-dialog .header-panel .label {
+    -fx-text-fill: #ffffff;
+    -fx-font-size: 18px;
+    -fx-font-weight: 900;
+}
+
+.app-dialog .content {
+    -fx-padding: 18 22 10 22;
+    -fx-text-fill: #21394e;
+    -fx-font-size: 13px;
+}
+
+.app-dialog .button-bar {
+    -fx-background-color: #eef3f8;
+    -fx-padding: 12 18 16 18;
+}
+
+.app-dialog .button-bar .button {
+    -fx-background-color: #edf5ff;
+    -fx-border-color: #8fbce6;
+    -fx-background-radius: 7;
+    -fx-border-radius: 7;
+    -fx-padding: 9 18 9 18;
+    -fx-text-fill: #174a7a;
+    -fx-font-weight: 900;
+    -fx-cursor: hand;
+}
+
+.app-dialog .button-bar .button:hover {
+    -fx-background-color: #d6ebff;
+    -fx-border-color: #3a8ed8;
+    -fx-text-fill: #0c3c68;
+}
+
 .hero-bar {
     -fx-background-color: #10263d;
     -fx-padding: 22 26 22 26;
@@ -25,9 +112,27 @@
     -fx-border-radius: 8;
     -fx-background-radius: 8;
     -fx-padding: 9 13 9 13;
+}
+
+.db-pill-text {
     -fx-text-fill: #e7f3ff;
     -fx-font-size: 12px;
     -fx-font-weight: 700;
+}
+
+.db-status-light {
+    -fx-stroke: rgba(255, 255, 255, 0.55);
+    -fx-stroke-width: 1.4;
+}
+
+.db-status-light.db-connected {
+    -fx-fill: #35d36b;
+    -fx-effect: dropshadow(gaussian, rgba(53, 211, 107, 0.55), 6, 0.36, 0, 0);
+}
+
+.db-status-light.db-disconnected {
+    -fx-fill: #e34d59;
+    -fx-effect: dropshadow(gaussian, rgba(227, 77, 89, 0.48), 6, 0.36, 0, 0);
 }
 
 .main-tabs {
@@ -150,6 +255,31 @@
 .combo-box:focused {
     -fx-background-color: #ffffff;
     -fx-border-color: #087f8c;
+}
+
+.combo-box .arrow-button {
+    -fx-background-color: #e7f4fb;
+    -fx-background-radius: 6;
+    -fx-border-color: #b7d7e8;
+    -fx-border-radius: 6;
+    -fx-padding: 0 10 0 10;
+}
+
+.combo-box:hover .arrow-button,
+.combo-box:focused .arrow-button {
+    -fx-background-color: #d7f0f8;
+    -fx-border-color: #67b5cf;
+}
+
+.combo-box .arrow {
+    -fx-background-color: #087f8c;
+    -fx-shape: "M 0 0 L 4 4 L 8 0 Z";
+    -fx-scale-x: 1.15;
+    -fx-scale-y: 1.15;
+}
+
+.combo-box .list-cell {
+    -fx-text-fill: #21394e;
 }
 
 .button {
@@ -408,16 +538,74 @@
 
 .status-label {
     -fx-background-color: #ffffff;
-    -fx-border-color: #d9e3ec;
+    -fx-border-color: #9fb8cd;
+    -fx-border-width: 1.5;
     -fx-border-radius: 8;
     -fx-background-radius: 8;
     -fx-padding: 10 14 10 14;
     -fx-text-fill: #41596c;
     -fx-font-size: 12px;
+    -fx-font-weight: 700;
+    -fx-effect: dropshadow(gaussian, rgba(38, 57, 77, 0.13), 10, 0.16, 0, 2);
 }
 
 .app-root.dark-mode {
     -fx-background-color: #111827;
+}
+
+.app-root.dark-mode .window-title-bar {
+    -fx-background-color: #0b1220;
+}
+
+.app-root.dark-mode .window-icon {
+    -fx-effect: dropshadow(gaussian, rgba(98, 214, 255, 0.20), 6, 0.22, 0, 1);
+}
+
+.app-root.dark-mode .window-title,
+.app-root.dark-mode .window-title-button {
+    -fx-text-fill: #edf6ff;
+}
+
+.app-root.dark-mode .window-title-button:hover {
+    -fx-background-color: #1c3047;
+}
+
+.app-root.dark-mode .window-close-button:hover {
+    -fx-background-color: #9b3038;
+    -fx-text-fill: #ffffff;
+}
+
+.app-dialog-dark {
+    -fx-background-color: #101b2d;
+    -fx-border-color: #496985;
+}
+
+.app-dialog-dark .header-panel {
+    -fx-background-color: #07111f;
+}
+
+.app-dialog-dark .header-panel .label {
+    -fx-text-fill: #f8fbff;
+}
+
+.app-dialog-dark .content {
+    -fx-text-fill: #dbe8f5;
+}
+
+.app-dialog-dark .button-bar {
+    -fx-background-color: #0f1a2b;
+}
+
+.app-dialog-dark .button-bar .button {
+    -fx-background-color: #1d3652;
+    -fx-border-color: #3d79ad;
+    -fx-text-fill: #d8ecff;
+}
+
+.app-dialog-dark .button-bar .button:hover {
+    -fx-background-color: #25517a;
+    -fx-border-color: #63b8ff;
+    -fx-text-fill: #ffffff;
 }
 
 .app-root.dark-mode .hero-bar {
@@ -435,6 +623,9 @@
 .app-root.dark-mode .db-pill {
     -fx-background-color: #10263d;
     -fx-border-color: #31516f;
+}
+
+.app-root.dark-mode .db-pill-text {
     -fx-text-fill: #d8ecff;
 }
 
@@ -502,6 +693,25 @@
     -fx-border-color: #4dc9f6;
 }
 
+.app-root.dark-mode .combo-box .arrow-button {
+    -fx-background-color: #18304a;
+    -fx-border-color: #3f6688;
+}
+
+.app-root.dark-mode .combo-box:hover .arrow-button,
+.app-root.dark-mode .combo-box:focused .arrow-button {
+    -fx-background-color: #214766;
+    -fx-border-color: #63b8ff;
+}
+
+.app-root.dark-mode .combo-box .arrow {
+    -fx-background-color: #62d6ff;
+}
+
+.app-root.dark-mode .combo-box .list-cell {
+    -fx-text-fill: #edf6ff;
+}
+
 .app-root.dark-mode .options-bar,
 .app-root.dark-mode .action-panel,
 .app-root.dark-mode .metric-card,
@@ -509,6 +719,11 @@
 .app-root.dark-mode .status-label {
     -fx-background-color: #101b2d;
     -fx-border-color: #2c4058;
+}
+
+.app-root.dark-mode .status-label {
+    -fx-border-color: #496985;
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.34), 12, 0.18, 0, 3);
 }
 
 .app-root.dark-mode .data-row:hover,
@@ -585,6 +800,34 @@
     -fx-background-color: #25517a;
     -fx-border-color: #63b8ff;
     -fx-text-fill: #ffffff;
+}
+
+.app-root.dark-mode .primary-button {
+    -fx-background-color: #0b5d73;
+    -fx-border-color: #1688a8;
+    -fx-text-fill: #e8f9ff;
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.30), 10, 0.22, 0, 3);
+}
+
+.app-root.dark-mode .primary-button:hover {
+    -fx-background-color: #0d7591;
+    -fx-border-color: #36b6d8;
+    -fx-text-fill: #ffffff;
+    -fx-effect: dropshadow(gaussian, rgba(54, 182, 216, 0.24), 14, 0.28, 0, 3);
+}
+
+.app-root.dark-mode .danger-button {
+    -fx-background-color: #7f2429;
+    -fx-border-color: #b44a52;
+    -fx-text-fill: #ffecef;
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.30), 10, 0.22, 0, 3);
+}
+
+.app-root.dark-mode .danger-button:hover {
+    -fx-background-color: #9b3038;
+    -fx-border-color: #df6b72;
+    -fx-text-fill: #ffffff;
+    -fx-effect: dropshadow(gaussian, rgba(223, 107, 114, 0.24), 14, 0.28, 0, 3);
 }
 
 .app-root.dark-mode .theme-toggle {

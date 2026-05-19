@@ -2,4 +2,5 @@
 run-app.err.log
 run-app.out.log
 JavaFX/build/
+Java/ConsoleApp/build/
 JavaFX/configurations/install.log

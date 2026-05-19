@@ -1,16 +1,16 @@
+import java.math.BigDecimal;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.Timestamp;
-import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-public class DatabaseTableDAO {
+public class TableDAO {
     private static final Map<String, String> TABLES = new LinkedHashMap<>();
 
     static {
@@ -28,53 +28,59 @@ public class DatabaseTableDAO {
 
     private final Database database;
 
-    public DatabaseTableDAO(Database database) {
+    TableDAO(Database database) {
         this.database = database;
     }
 
-    public List<String> tableNames() {
+    List<String> tableNames() {
         return new ArrayList<>(TABLES.keySet());
     }
 
-    public TableData findAll(String tableName) throws SQLException {
+    TableData findAll(String tableName) throws SQLException {
         String orderColumn = TABLES.get(tableName);
         if (orderColumn == null) {
             throw new SQLException("Tabel necunoscut: " + tableName);
         }
-
         String sql = "SELECT * FROM " + quote(tableName) + " ORDER BY " + quote(orderColumn);
         try (Connection connection = database.getConnection();
-             PreparedStatement statement = connection.prepareStatement(sql);
-             ResultSet rs = statement.executeQuery()) {
+             PreparedStatement statement = connection.prepareStatement(sql)) {
+            return query(tableName, statement);
+        }
+    }
+
+    TableData findByIdRange(String tableName, IdRange range) throws SQLException {
+        String orderColumn = TABLES.get(tableName);
+        if (orderColumn == null) {
+            throw new SQLException("Tabel necunoscut: " + tableName);
+        }
+        String sql = "SELECT * FROM " + quote(tableName)
+                + " WHERE " + quote(orderColumn) + " BETWEEN ? AND ?"
+                + " ORDER BY " + quote(orderColumn);
+        try (Connection connection = database.getConnection();
+             PreparedStatement statement = connection.prepareStatement(sql)) {
+            statement.setInt(1, range.from);
+            statement.setInt(2, range.to);
+            return query(tableName, statement);
+        }
+    }
+
+    private TableData query(String tableName, PreparedStatement statement) throws SQLException {
+        try (ResultSet rs = statement.executeQuery()) {
             ResultSetMetaData metadata = rs.getMetaData();
             List<String> columns = new ArrayList<>();
             for (int i = 1; i <= metadata.getColumnCount(); i++) {
                 columns.add(metadata.getColumnName(i));
             }
 
-            List<TableRowData> rows = new ArrayList<>();
+            List<Map<String, String>> rows = new ArrayList<>();
             while (rs.next()) {
-                TableRowData row = new TableRowData();
+                Map<String, String> row = new LinkedHashMap<>();
                 for (String column : columns) {
-                    Object value = rs.getObject(column);
-                    row.put(column, formatValue(tableName, column, value));
+                    row.put(column, formatValue(tableName, column, rs.getObject(column)));
                 }
                 rows.add(row);
             }
             return new TableData(columns, rows);
-        }
-    }
-
-    public int countRows(String tableName) throws SQLException {
-        if (!TABLES.containsKey(tableName)) {
-            throw new SQLException("Tabel necunoscut: " + tableName);
-        }
-
-        String sql = "SELECT COUNT(*) FROM " + quote(tableName);
-        try (Connection connection = database.getConnection();
-             PreparedStatement statement = connection.prepareStatement(sql);
-             ResultSet rs = statement.executeQuery()) {
-            return rs.next() ? rs.getInt(1) : 0;
         }
     }
 
@@ -86,35 +92,31 @@ public class DatabaseTableDAO {
         if (value == null) {
             return "";
         }
-
-        if ("Lectii".equals(tableName) && "DataLectie".equals(columnName) && value instanceof Timestamp timestamp) {
-            return timestamp.toLocalDateTime().toLocalDate().toString();
+        if ("Lectii".equals(tableName) && "DataLectie".equals(columnName) && value instanceof Timestamp) {
+            return ((Timestamp) value).toLocalDateTime().toLocalDate().toString();
         }
-
         if ("Lectii".equals(tableName) && "DurataLectie".equals(columnName)) {
             return formatLessonDuration(value);
         }
-
         return String.valueOf(value);
     }
 
     private String formatLessonDuration(Object value) {
         double duration;
-        if (value instanceof BigDecimal decimal) {
-            duration = decimal.doubleValue();
-        } else if (value instanceof Number number) {
-            duration = number.doubleValue();
+        if (value instanceof BigDecimal) {
+            duration = ((BigDecimal) value).doubleValue();
+        } else if (value instanceof Number) {
+            duration = ((Number) value).doubleValue();
         } else {
             duration = Double.parseDouble(String.valueOf(value));
         }
-
         int hours = (int) duration;
         int minutes = (int) Math.round((duration - hours) * 60);
         if (minutes == 60) {
             hours++;
             minutes = 0;
         }
-
         return String.format("%02dh %02dmin", hours, minutes);
     }
 }
+
