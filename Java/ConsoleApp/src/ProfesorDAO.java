@@ -51,6 +51,9 @@ public class ProfesorDAO {
     }
 
     Profesor save(Profesor professor) throws SQLException {
+        if (professor == null) {
+            throw new SQLException("Profesorul nu poate fi null.");
+        }
         int id = professor.id > 0 ? professor.id : nextId("Profesori", "ProfesorID");
         NameParts name = NameParts.from(professor.fullName);
         String sql = "INSERT INTO Profesori (ProfesorID, IDNP, NumeProfesor, PrenumeProfesor, DataNasterii, SexProfesor, NrTelefon, Email, TipCertificare, DataAngajarii, InstitutieID) "
@@ -74,6 +77,9 @@ public class ProfesorDAO {
     }
 
     void update(Profesor professor) throws SQLException {
+        if (professor == null || professor.id <= 0) {
+            throw new SQLException("Selecteaza un profesor valid pentru modificare.");
+        }
         NameParts name = NameParts.from(professor.fullName);
         String sql = "UPDATE Profesori SET NumeProfesor = ?, PrenumeProfesor = ?, TipCertificare = ? WHERE ProfesorID = ?";
         try (Connection connection = database.getConnection();
@@ -82,20 +88,39 @@ public class ProfesorDAO {
             statement.setString(2, name.firstName);
             statement.setString(3, ConsoleText.normalizeCertification(professor.certification));
             statement.setInt(4, professor.id);
-            statement.executeUpdate();
+            if (statement.executeUpdate() == 0) {
+                throw new SQLException("Profesorul nu a fost gasit pentru modificare.");
+            }
         }
     }
 
     boolean delete(int id) throws SQLException {
+        if (id <= 0) {
+            throw new SQLException("ID profesor invalid pentru stergere.");
+        }
         try (Connection connection = database.getConnection()) {
+            connection.setAutoCommit(false);
             try (PreparedStatement lectii = connection.prepareStatement("UPDATE Lectii SET ProfesorID = NULL WHERE ProfesorID = ?")) {
                 lectii.setInt(1, id);
                 lectii.executeUpdate();
             }
             try (PreparedStatement statement = connection.prepareStatement("DELETE FROM Profesori WHERE ProfesorID = ?")) {
                 statement.setInt(1, id);
-                return statement.executeUpdate() > 0;
+                boolean deleted = statement.executeUpdate() > 0;
+                connection.commit();
+                return deleted;
+            } catch (SQLException ex) {
+                rollback(connection, ex);
+                throw ex;
             }
+        }
+    }
+
+    private void rollback(Connection connection, SQLException original) {
+        try {
+            connection.rollback();
+        } catch (SQLException rollbackEx) {
+            original.addSuppressed(rollbackEx);
         }
     }
 

@@ -1,9 +1,11 @@
 import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.InvalidPathException;
 import java.nio.file.Paths;
 import java.sql.SQLException;
 import java.time.LocalDate;
+import java.time.format.DateTimeParseException;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -84,8 +86,12 @@ public class Main {
                         printWarning("Optiune necunoscuta.");
                         break;
                 }
+            } catch (SQLException ex) {
+                printError(AppErrors.databaseMessage(ex));
+            } catch (IllegalArgumentException ex) {
+                printWarning(ex.getMessage());
             } catch (Exception ex) {
-                printError(ex.getMessage());
+                printError(AppErrors.userMessage(ex));
             }
         }
 
@@ -300,6 +306,7 @@ public class Main {
 
     private void updateStudent() throws SQLException {
         int id = parseInt(prompt("ID student: "), -1);
+        requirePositiveId(id, "ID student");
         String name = requireText(prompt("Nume complet nou: "), "Numele este obligatoriu.");
         LocalDate birthDate = parseDate(prompt("Data nasterii (YYYY-MM-DD, gol pentru azi): "), LocalDate.now());
         studentDAO.update(new Student(id, name, birthDate, 0));
@@ -308,6 +315,7 @@ public class Main {
 
     private void deleteStudent() throws SQLException {
         int id = parseInt(prompt("ID student: "), -1);
+        requirePositiveId(id, "ID student");
         if (confirm("Stergi studentul " + id + "?")) {
             printResult(studentDAO.delete(id), "Student sters.", "Nu a fost gasit.");
         }
@@ -323,6 +331,7 @@ public class Main {
 
     private void updateProfessor() throws SQLException {
         int id = parseInt(prompt("ID profesor: "), -1);
+        requirePositiveId(id, "ID profesor");
         String name = requireText(prompt("Nume complet nou: "), "Numele este obligatoriu.");
         String certification = promptDefault("Certificare", "Fara grad didactic");
         profesorDAO.update(new Profesor(id, name, certification, 4.5));
@@ -331,6 +340,7 @@ public class Main {
 
     private void deleteProfessor() throws SQLException {
         int id = parseInt(prompt("ID profesor: "), -1);
+        requirePositiveId(id, "ID profesor");
         if (confirm("Stergi profesorul " + id + "?")) {
             printResult(profesorDAO.delete(id), "Profesor sters.", "Nu a fost gasit.");
         }
@@ -348,6 +358,7 @@ public class Main {
 
     private void updateCourse() throws SQLException {
         int id = parseInt(prompt("ID curs: "), -1);
+        requirePositiveId(id, "ID curs");
         String title = requireText(prompt("Denumire curs noua: "), "Denumirea este obligatorie.");
         String type = promptDefault("Tip predare (Online/Offline/Hibrid)", "Online");
         double price = parseDouble(prompt("Pret: "), 0);
@@ -358,15 +369,28 @@ public class Main {
 
     private void deleteCourse() throws SQLException {
         int id = parseInt(prompt("ID curs: "), -1);
+        requirePositiveId(id, "ID curs");
         if (confirm("Stergi cursul " + id + "?")) {
             printResult(cursDAO.delete(id), "Curs sters.", "Nu a fost gasit.");
         }
     }
 
     private void saveTextFile(String fileName, String content) {
+        if (fileName == null || fileName.trim().isEmpty()) {
+            printWarning("Numele fisierului este obligatoriu.");
+            return;
+        }
+        if (content == null || content.isBlank()) {
+            printWarning("Nu exista continut de salvat.");
+            return;
+        }
         try (FileWriter writer = new FileWriter(fileName, StandardCharsets.UTF_8)) {
             writer.write(content);
             printSuccess("Fisier salvat: " + Paths.get(fileName).toAbsolutePath());
+        } catch (InvalidPathException ex) {
+            printError("Calea fisierului nu este valida: " + ex.getInput());
+        } catch (SecurityException ex) {
+            printError("Nu ai permisiune sa salvezi in aceasta locatie.");
         } catch (IOException ex) {
             printError("Nu s-a putut salva fisierul: " + ex.getMessage());
         }
@@ -551,25 +575,47 @@ public class Main {
         return value.trim();
     }
 
+    private void requirePositiveId(int id, String fieldName) {
+        if (id <= 0) {
+            throw new IllegalArgumentException(fieldName + " trebuie sa fie mai mare decat 0.");
+        }
+    }
+
     private int parseInt(String value, int fallback) {
         if (value == null || value.trim().isEmpty()) {
             return fallback;
         }
-        return Integer.parseInt(value.trim());
+        try {
+            return Integer.parseInt(value.trim());
+        } catch (NumberFormatException ex) {
+            throw new IllegalArgumentException("Valoarea trebuie sa fie un numar intreg valid.");
+        }
     }
 
     private double parseDouble(String value, double fallback) {
         if (value == null || value.trim().isEmpty()) {
             return fallback;
         }
-        return Double.parseDouble(value.trim());
+        try {
+            double result = Double.parseDouble(value.trim());
+            if (result < 0) {
+                throw new IllegalArgumentException("Valoarea numerica nu poate fi negativa.");
+            }
+            return result;
+        } catch (NumberFormatException ex) {
+            throw new IllegalArgumentException("Valoarea trebuie sa fie un numar valid.");
+        }
     }
 
     private LocalDate parseDate(String value, LocalDate fallback) {
         if (value == null || value.trim().isEmpty()) {
             return fallback;
         }
-        return LocalDate.parse(value.trim());
+        try {
+            return LocalDate.parse(value.trim());
+        } catch (DateTimeParseException ex) {
+            throw new IllegalArgumentException("Data trebuie sa fie in formatul YYYY-MM-DD.");
+        }
     }
 
     private String trim(String value, int max) {

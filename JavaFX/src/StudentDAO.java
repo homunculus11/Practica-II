@@ -81,6 +81,9 @@ public class StudentDAO {
     }
 
     public Student save(Student student) throws SQLException {
+        if (student == null) {
+            throw new SQLException("Studentul nu poate fi null.");
+        }
         int id = student.getId() > 0 ? student.getId() : nextId("Studenti", "StudentID");
         String sql = "INSERT INTO Studenti (StudentID, IDNP, NumeStudent, PrenumeStudent, DataNasterii, SexStudent, NrTelefon, LocalitateID) "
                 + "VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
@@ -101,6 +104,9 @@ public class StudentDAO {
     }
 
     public Student update(Student student) throws SQLException {
+        if (student == null || student.getId() <= 0) {
+            throw new SQLException("Selecteaza un student valid pentru modificare.");
+        }
         String sql = "UPDATE Studenti SET NumeStudent = ?, PrenumeStudent = ?, DataNasterii = ? WHERE StudentID = ?";
         try (Connection connection = database.getConnection();
              PreparedStatement statement = connection.prepareStatement(sql)) {
@@ -109,21 +115,40 @@ public class StudentDAO {
             statement.setString(2, name.getFirstName());
             statement.setDate(3, Date.valueOf(student.getDataInrolare()));
             statement.setInt(4, student.getId());
-            statement.executeUpdate();
+            if (statement.executeUpdate() == 0) {
+                throw new SQLException("Studentul nu a fost gasit pentru modificare.");
+            }
         }
         return student;
     }
 
     public boolean delete(int id) throws SQLException {
+        if (id <= 0) {
+            throw new SQLException("ID student invalid pentru stergere.");
+        }
         try (Connection connection = database.getConnection()) {
+            connection.setAutoCommit(false);
             try (PreparedStatement children = connection.prepareStatement("DELETE FROM Participari_Cursuri WHERE StudentID = ?")) {
                 children.setInt(1, id);
                 children.executeUpdate();
             }
             try (PreparedStatement statement = connection.prepareStatement("DELETE FROM Studenti WHERE StudentID = ?")) {
                 statement.setInt(1, id);
-                return statement.executeUpdate() > 0;
+                boolean deleted = statement.executeUpdate() > 0;
+                connection.commit();
+                return deleted;
+            } catch (SQLException ex) {
+                rollback(connection, ex);
+                throw ex;
             }
+        }
+    }
+
+    private void rollback(Connection connection, SQLException original) {
+        try {
+            connection.rollback();
+        } catch (SQLException rollbackEx) {
+            original.addSuppressed(rollbackEx);
         }
     }
 

@@ -99,14 +99,7 @@ public class DatabaseTableDAO {
     }
 
     private String formatLessonDuration(Object value) {
-        double duration;
-        if (value instanceof BigDecimal decimal) {
-            duration = decimal.doubleValue();
-        } else if (value instanceof Number number) {
-            duration = number.doubleValue();
-        } else {
-            duration = Double.parseDouble(String.valueOf(value));
-        }
+        double duration = parseDuration(value);
 
         int hours = (int) duration;
         int minutes = (int) Math.round((duration - hours) * 60);
@@ -116,5 +109,19 @@ public class DatabaseTableDAO {
         }
 
         return String.format("%02dh %02dmin", hours, minutes);
+    }
+
+    private double parseDuration(Object value) {
+        try {
+            if (value instanceof BigDecimal decimal) {
+                return decimal.doubleValue();
+            }
+            if (value instanceof Number number) {
+                return number.doubleValue();
+            }
+            return Double.parseDouble(String.valueOf(value));
+        } catch (RuntimeException ex) {
+            return 0;
+        }
     }
 }

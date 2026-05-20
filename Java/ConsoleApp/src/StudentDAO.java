@@ -56,6 +56,9 @@ public class StudentDAO {
     }
 
     Student save(Student student) throws SQLException {
+        if (student == null) {
+            throw new SQLException("Studentul nu poate fi null.");
+        }
         int id = student.id > 0 ? student.id : nextId("Studenti", "StudentID");
         NameParts name = NameParts.from(student.fullName);
         String sql = "INSERT INTO Studenti (StudentID, IDNP, NumeStudent, PrenumeStudent, DataNasterii, SexStudent, NrTelefon, LocalitateID) "
@@ -76,6 +79,9 @@ public class StudentDAO {
     }
 
     void update(Student student) throws SQLException {
+        if (student == null || student.id <= 0) {
+            throw new SQLException("Selecteaza un student valid pentru modificare.");
+        }
         NameParts name = NameParts.from(student.fullName);
         String sql = "UPDATE Studenti SET NumeStudent = ?, PrenumeStudent = ?, DataNasterii = ? WHERE StudentID = ?";
         try (Connection connection = database.getConnection();
@@ -84,20 +90,39 @@ public class StudentDAO {
             statement.setString(2, name.firstName);
             statement.setDate(3, Date.valueOf(student.birthDate));
             statement.setInt(4, student.id);
-            statement.executeUpdate();
+            if (statement.executeUpdate() == 0) {
+                throw new SQLException("Studentul nu a fost gasit pentru modificare.");
+            }
         }
     }
 
     boolean delete(int id) throws SQLException {
+        if (id <= 0) {
+            throw new SQLException("ID student invalid pentru stergere.");
+        }
         try (Connection connection = database.getConnection()) {
+            connection.setAutoCommit(false);
             try (PreparedStatement children = connection.prepareStatement("DELETE FROM Participari_Cursuri WHERE StudentID = ?")) {
                 children.setInt(1, id);
                 children.executeUpdate();
             }
             try (PreparedStatement statement = connection.prepareStatement("DELETE FROM Studenti WHERE StudentID = ?")) {
                 statement.setInt(1, id);
-                return statement.executeUpdate() > 0;
+                boolean deleted = statement.executeUpdate() > 0;
+                connection.commit();
+                return deleted;
+            } catch (SQLException ex) {
+                rollback(connection, ex);
+                throw ex;
             }
+        }
+    }
+
+    private void rollback(Connection connection, SQLException original) {
+        try {
+            connection.rollback();
+        } catch (SQLException rollbackEx) {
+            original.addSuppressed(rollbackEx);
         }
     }
 

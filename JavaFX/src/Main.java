@@ -134,7 +134,7 @@ public class Main extends Application {
                 setText(null);
                 setGraphic(empty || item == null ? null : dataRow(
                         item.getNume(),
-                        "Data nașterii: " + item.getDataInrolare(),
+                        "Data naИ™terii: " + item.getDataInrolare(),
                         "ID " + item.getId() + "  |  Cursuri inscrise: " + item.getNumarInrolari()));
             }
         });
@@ -227,7 +227,7 @@ public class Main extends Application {
         Label title = new Label("Cursuri Online");
         title.getStyleClass().add("app-title");
 
-        Label subtitle = new Label("Administrare cursuri, profesori, studenți, rapoarte și export");
+        Label subtitle = new Label("Administrare cursuri, profesori, studenИ›i, rapoarte И™i export");
         subtitle.getStyleClass().add("app-subtitle");
 
         VBox copy = new VBox(4, title, subtitle);
@@ -396,16 +396,16 @@ public class Main extends Application {
             reportArea.setText(service.genereaza(reportType.getValue()));
             updateMetrics();
         }));
-        Button allReports = primary("Generează rapoartele");
+        Button allReports = primary("GenereazДѓ rapoartele");
         allReports.setOnAction(event -> runSafely(() -> {
             RaportService service = new RaportService(cursDAO.findAll(), inrolareDAO.findAll(), studentDAO.findAll());
             reportArea.setText(service.genRaport());
             updateMetrics();
         }));
-        Button exportCsv = secondary("Salvează ca CSV");
+        Button exportCsv = secondary("SalveazДѓ ca CSV");
         exportCsv.setOnAction(event -> runSafely(() -> export(stage, "raport-cursuri.csv", new RaportService(cursDAO.findAll(), inrolareDAO.findAll(), studentDAO.findAll()).exportCSV())));
-        Button exportTxt = secondary("Salvează ca TXT");
-        exportTxt.setOnAction(event -> runSafely(() -> export(stage, "raport-cursuri.txt", reportArea.getText().isEmpty() ? "Nu există raport generat." : reportArea.getText())));
+        Button exportTxt = secondary("SalveazДѓ ca TXT");
+        exportTxt.setOnAction(event -> runSafely(() -> export(stage, "raport-cursuri.txt", reportArea.getText().isEmpty() ? "Nu existДѓ raport generat." : reportArea.getText())));
 
         HBox metrics = new HBox(14,
                 metricCard("Cursuri", coursesMetric, "Oferta activa"),
@@ -414,7 +414,7 @@ public class Main extends Application {
         metrics.getStyleClass().add("metrics-row");
 
         VBox panel = new VBox(16,
-                sectionHeader("Rapoarte și export", "Alege raportul dorit, generează analiza și salvează datele în fișiere CSV sau TXT."),
+                sectionHeader("Rapoarte И™i export", "Alege raportul dorit, genereazДѓ analiza И™i salveazДѓ datele Г®n fiИ™iere CSV sau TXT."),
                 metrics,
                 reportSelector(reportType, selectedReport, allReports),
                 reportActions(exportCsv, exportTxt),
@@ -674,7 +674,7 @@ public class Main extends Application {
         label.getStyleClass().add("panel-title");
         Region spacer = new Region();
         HBox.setHgrow(spacer, Priority.ALWAYS);
-        Label hint = new Label("Selectează un rând pentru editare");
+        Label hint = new Label("SelecteazДѓ un rГўnd pentru editare");
         hint.getStyleClass().add("panel-hint");
         HBox box = new HBox(10, label, spacer, hint);
         box.setAlignment(Pos.CENTER_LEFT);
@@ -946,7 +946,7 @@ public class Main extends Application {
         runSafely(() -> {
             if (!database.testConnection()) {
                 setDatabaseConnected(false);
-                throw new SQLException("Conexiunea la SQL Server a eșuat. Verifică db.properties și baza de date din SSMS.");
+                throw new SQLException("Conexiunea la SQL Server a eИ™uat. VerificДѓ db.properties И™i baza de date din SSMS.");
             }
             setDatabaseConnected(true);
             statusLabel.setText("Conectat la " + database.getConfig().describe());
@@ -1113,11 +1113,16 @@ public class Main extends Application {
     }
 
     private void export(Stage stage, String defaultName, String content) throws IOException {
+        if (content == null || content.isBlank()) {
+            throw new IOException("Nu exista continut de exportat.");
+        }
         FileChooser chooser = new FileChooser();
         chooser.setInitialFileName(defaultName);
         File file = chooser.showSaveDialog(stage);
         if (file == null) {
-            return;
+        }
+        if (file.isDirectory()) {
+            throw new IOException("Alege un fisier, nu un folder.");
         }
         try (FileWriter writer = new FileWriter(file)) {
             writer.write(content);
@@ -1152,14 +1157,25 @@ public class Main extends Application {
         return selected;
     }
 
-    private int parseId(String text) {
+    private int parseId(String text) throws ValidationException {
         if (text == null || text.trim().isEmpty()) {
             return 0;
         }
-        return Integer.parseInt(text.trim());
+        try {
+            int id = Integer.parseInt(text.trim());
+            if (id < 0) {
+                throw new ValidationException("ID-ul nu poate fi negativ.");
+            }
+            return id;
+        } catch (NumberFormatException ex) {
+            throw new ValidationException("ID-ul trebuie sa fie un numar intreg valid.");
+        }
     }
 
     private double parsePrice(String text) throws ValidationException {
+        if (text == null || text.trim().isEmpty()) {
+            throw new ValidationException("Pretul este obligatoriu.");
+        }
         try {
             return Double.parseDouble(text.trim());
         } catch (Exception ex) {
@@ -1174,7 +1190,7 @@ public class Main extends Application {
         try {
             return LocalDate.parse(text.trim());
         } catch (Exception ex) {
-            throw new ValidationException("Data trebuie să fie în formatul 2004-05-21.");
+            throw new ValidationException("Data trebuie sДѓ fie Г®n formatul 2004-05-21.");
         }
     }
 
@@ -1190,15 +1206,28 @@ public class Main extends Application {
     private void runSafely(CheckedRunnable action) {
         try {
             action.run();
+        } catch (ValidationException ex) {
+            showError("Date invalide", ex.getMessage());
+        } catch (SQLException ex) {
+            showError("Eroare baza de date", AppErrors.databaseMessage(ex));
+        } catch (IOException ex) {
+            showError("Eroare fisier", AppErrors.userMessage(ex));
+        } catch (SecurityException ex) {
+            showError("Permisiune refuzata", AppErrors.userMessage(ex));
         } catch (Exception ex) {
-            statusLabel.setText("Eroare: " + ex.getMessage());
-            Alert alert = new Alert(Alert.AlertType.ERROR);
-            alert.setTitle("Eroare");
-            alert.setHeaderText("Operația nu a reușit");
-            alert.setContentText(ex.getMessage());
-            stylePopup(alert);
-            alert.showAndWait();
+            showError("Eroare", AppErrors.userMessage(ex));
         }
+    }
+
+    private void showError(String title, String message) {
+        String safeMessage = message == null || message.isBlank() ? "Operatia nu a reusit." : message;
+        statusLabel.setText("Eroare: " + safeMessage);
+        Alert alert = new Alert(Alert.AlertType.ERROR);
+        alert.setTitle(title);
+        alert.setHeaderText("Operatia nu a reusit");
+        alert.setContentText(safeMessage);
+        stylePopup(alert);
+        alert.showAndWait();
     }
 
     public static void main(String[] args) {

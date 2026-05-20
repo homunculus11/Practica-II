@@ -10,10 +10,17 @@ public class Database {
     }
 
     public Connection getConnection() throws SQLException {
-        if (config.isIntegratedSecurity()) {
-            return DriverManager.getConnection(config.getJdbcUrl());
+        try {
+            if (config.isIntegratedSecurity()) {
+                return DriverManager.getConnection(config.getJdbcUrl());
+            }
+            if (config.getUser() == null || config.getUser().isBlank()) {
+                throw new SQLException("Utilizatorul SQL nu este completat in db.properties.");
+            }
+            return DriverManager.getConnection(config.getJdbcUrl(), config.getUser(), config.getPassword());
+        } catch (SQLException ex) {
+            throw new SQLException(AppErrors.databaseMessage(ex), ex.getSQLState(), ex.getErrorCode(), ex);
         }
-        return DriverManager.getConnection(config.getJdbcUrl(), config.getUser(), config.getPassword());
     }
 
     public boolean testConnection() {
