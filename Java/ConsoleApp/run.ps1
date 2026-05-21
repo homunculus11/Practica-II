@@ -13,13 +13,21 @@ if (-not $jdkHome -or -not (Test-Path "$jdkHome\bin\javac.exe")) {
     }
 }
 
+if (-not $jdkHome -or -not (Test-Path "$jdkHome\bin\javac.exe")) {
+    $localJdk = Resolve-Path "$PSScriptRoot\..\..\JavaFX\configurations\jdk-25" -ErrorAction SilentlyContinue
+    if ($localJdk -and (Test-Path "$localJdk\bin\javac.exe")) {
+        $jdkHome = $localJdk.Path
+    }
+}
+
 if (-not $jdkHome) {
     Write-Host "[ERROR] JDK not found. Install JDK 25 or set JAVA_HOME." -ForegroundColor Red
     exit 1
 }
 
 New-Item -ItemType Directory -Force -Path "build\classes" | Out-Null
-& "$jdkHome\bin\javac.exe" -encoding UTF-8 -cp "lib\mssql-jdbc.jar" -d "build\classes" src\*.java
+$sources = Get-ChildItem -Path "src" -Recurse -Filter "*.java" | ForEach-Object { $_.FullName }
+& "$jdkHome\bin\javac.exe" -encoding UTF-8 -cp "lib\mssql-jdbc.jar" -d "build\classes" $sources
 if ($LASTEXITCODE -ne 0) {
     Write-Host "[ERROR] Compilation failed." -ForegroundColor Red
     exit 1

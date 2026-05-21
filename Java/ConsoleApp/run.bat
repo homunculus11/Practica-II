@@ -17,13 +17,20 @@ if not defined JDK_HOME (
 )
 
 if not defined JDK_HOME (
+    if exist "..\..\JavaFX\configurations\jdk-25\bin\javac.exe" (
+        set "JDK_HOME=..\..\JavaFX\configurations\jdk-25"
+    )
+)
+
+if not defined JDK_HOME (
     echo [ERROR] JDK not found. Install JDK 25 or set JAVA_HOME.
     pause
     exit /b 1
 )
 
 if not exist "build\classes" mkdir "build\classes"
-"%JDK_HOME%\bin\javac.exe" -encoding UTF-8 -cp "lib\mssql-jdbc.jar" -d "build\classes" src\*.java
+dir /s /b src\*.java > build\sources.txt
+"%JDK_HOME%\bin\javac.exe" -encoding UTF-8 -cp "lib\mssql-jdbc.jar" -d "build\classes" @build\sources.txt
 if errorlevel 1 (
     echo [ERROR] Compilation failed.
     pause

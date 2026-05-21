@@ -99,7 +99,8 @@ Write-Host "Using Java from: $javaHome" -ForegroundColor Green
 Write-Host ""
 Write-Host "Compiling Java sources..." -ForegroundColor Cyan
 New-Item -ItemType Directory -Force -Path "build\classes" | Out-Null
-& "$javaHome\bin\javac" -encoding UTF-8 --module-path configurations\javafx-25-sdk\lib --add-modules javafx.controls --class-path "lib\mssql-jdbc.jar" -d "build\classes" src\*.java
+$sources = Get-ChildItem -Path "src" -Recurse -Filter "*.java" | ForEach-Object { $_.FullName }
+& "$javaHome\bin\javac" -encoding UTF-8 --module-path configurations\javafx-25-sdk\lib --add-modules javafx.controls --class-path "lib\mssql-jdbc.jar" -d "build\classes" $sources
 
 if ($LASTEXITCODE -ne 0) {
     Write-Host "[ERROR] Compilation failed!" -ForegroundColor Red

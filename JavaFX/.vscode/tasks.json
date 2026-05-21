@@ -4,7 +4,7 @@
     {
       "label": "Build Main",
       "type": "shell",
-      "command": "if not exist build\\classes mkdir build\\classes && javac -encoding UTF-8 --module-path configurations\\javafx-25-sdk\\lib --add-modules javafx.controls --class-path lib\\mssql-jdbc.jar -d build\\classes src\\*.java",
+      "command": "if not exist build\\classes mkdir build\\classes && dir /s /b src\\*.java > build\\sources.txt && javac -encoding UTF-8 --module-path configurations\\javafx-25-sdk\\lib --add-modules javafx.controls --class-path lib\\mssql-jdbc.jar -d build\\classes @build\\sources.txt",
       "problemMatcher": ["$javac"],
       "group": "build"
     }

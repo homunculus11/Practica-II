@@ -105,7 +105,8 @@ echo Using JDK: %JDK_HOME%
 echo.
 echo Compiling Java sources...
 if not exist "build\classes" mkdir "build\classes"
-"%JAVAC_CMD%" -encoding UTF-8 --module-path configurations\javafx-25-sdk\lib --add-modules javafx.controls --class-path "lib\mssql-jdbc.jar" -d "build\classes" src\*.java
+dir /s /b src\*.java > build\sources.txt
+"%JAVAC_CMD%" -encoding UTF-8 --module-path configurations\javafx-25-sdk\lib --add-modules javafx.controls --class-path "lib\mssql-jdbc.jar" -d "build\classes" @build\sources.txt
 
 if %ERRORLEVEL% neq 0 (
     echo.

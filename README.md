@@ -18,7 +18,7 @@ cd C:\Users\PC\Desktop\Practica-II
 .\JavaFX\configurations\run.ps1
 ```
 
-The runner compiles sources from `JavaFX\src` into `JavaFX\build\classes`, then starts `Main`.
+The runner compiles sources recursively from `JavaFX\src` into `JavaFX\build\classes`, then starts `Main`.
 
 ## Database Configuration
 
@@ -46,14 +46,29 @@ The JDBC URL enables Unicode string parameters, so new values saved from the app
 
 ```text
 Practica-II/
-├── JavaFX/
-│   ├── src/                     Java source files
-│   ├── resources/               styles.css and db.properties
-│   ├── lib/                     mssql-jdbc.jar
-│   ├── build/classes/           generated .class files
-│   └── configurations/          run scripts, Maven/Gradle files, JavaFX SDK
-├── SQL/                         database schema and sample data scripts
-└── z-Others/                    SQL auth DLL and bibliography
+|-- JavaFX/
+|   |-- src/
+|   |   |-- 01-pornire-aplicatie/     Main JavaFX application
+|   |   |-- 02-mostenire-persoane/    Persoana, Student, Profesor
+|   |   |-- 03-mostenire-lectii/      Lectie and lesson subclasses
+|   |   |-- 04-interfete/             Exportable, Reportable, Searchable
+|   |   |-- 05-enumerari/             NivelCurs, StatusInrolare, TipLectie
+|   |   |-- 06-modele-domeniu/        Curs, Inrolare and table row models
+|   |   |-- 07-acces-date/            Database, config and DAO classes
+|   |   |-- 08-servicii-validare/     Reports, validation and error helpers
+|   |-- resources/                    styles.css and db.properties
+|   |-- lib/                          mssql-jdbc.jar
+|   |-- build/classes/                generated .class files
+|   |-- configurations/               run scripts, JavaFX SDK and local JDK
+|-- Java/ConsoleApp/
+|   |-- src/
+|   |   |-- 01-pornire-consola/       Console Main
+|   |   |-- 02-modele-domeniu/        Console domain models
+|   |   |-- 03-acces-date/            Console database and DAO classes
+|   |   |-- 04-servicii-rapoarte/     Console report service
+|   |   |-- 05-utilitare/             Console helpers
+|-- SQL/                              database schema and sample data scripts
+|-- z-Others/                         SQL auth DLL and bibliography
 ```
 
 ## Required Runtime Files
@@ -66,10 +81,11 @@ Keep these files/folders:
 - `JavaFX\configurations\run.bat`
 - `JavaFX\configurations\run.ps1`
 - `JavaFX\configurations\javafx-25-sdk\lib`
+- `JavaFX\configurations\jdk-25`
 - `z-Others\mssql-jdbc_auth-13.4.0.x64.dll`
 - `SQL\SQL Demo Files\All-in-One\structure-and-inserts-in-order.sql`
 
-Generated files such as `.class`, `JavaFX\build`, and run logs are ignored by Git.
+Generated files such as `.class`, `JavaFX\build`, `Java\ConsoleApp\build`, and run logs are ignored by Git.
 
 ## Database Setup
 
